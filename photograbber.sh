@@ -1,8 +1,8 @@
 #!/bin/bash
-NEW_MAIL=/home/dave/.getmail/Mailbox/new
+NEW_MAIL=/home/dave/mail
 RECEIVED_PHOTOS=/home/dave/Desktop/RECEIVED_PHOTOS
+mailbox=/var/mail/dave
 
-echo "START"
 ## to include the year:  $(date +"%Y-%m-%dT%H%M%S")
 NOW=$(date +"%m-%dT%H%M%S")
 		
@@ -11,25 +11,25 @@ echo "Checking for new messages at $NOW..."
 
 cd $NEW_MAIL
 
-getmail
-EMAILCOUNT=`ls -1 $NEW_MAIL/*.pi 2>/dev/null | wc -l`
+# Retrieve the email from the server
+fetchmail
 
-if [ $EMAILCOUNT == 0 ]
-then
-	echo "There are no new emails."
-	echo "END"
-	exit 0
-
+#Just stop if there is no new mail
+if [ $? -eq 1 ]; then
+	exit 1
 else
+	# Extract the messages from the mbox spool
+	cat /var/mail/dave | formail -ds | cat > $NEW_MAIL/$FILENO_$NOW.msg
+
+	EMAILCOUNT=`ls -1 $NEW_MAIL/*.msg 2>/dev/null | wc -l`
 	echo "There are $EMAILCOUNT new messages."
-	echo "Processing new emails..."
 		
-	for message in $NEW_MAIL/*.pi; do
+	for message in $NEW_MAIL/*.msg; do
 		echo "Processing $file"
 		tempdir=temp-$NOW
 
 		## Get sender's name and email address, remove weird characters and spaces
-		sender=$(cat $message | formail -x From:| sed 's/[<>]//g' | sed 's/ /_/g') 
+		sender=$(cat $message | formail -x From:| sed 's/[<>]//g' | sed 's/ /_/g')
 
 		## Create a temporary dir
 		echo "Creating $tempdir"
@@ -38,19 +38,39 @@ else
 		## Save atttachments in the temp dir
 		ripmime -i $message -d $tempdir
 
+		#Check if there's already a folder for this sender
+		if test -d "$RECEIVED_PHOTOS/$sender"; then
+			echo "$RECEIVED_PHOTOS/$sender exists"
+		else
+			# If not, make one
+			echo "Making $RECEIVED_PHOTOS/$sender"
+			mkdir $RECEIVED_PHOTOS/$sender
+		fi
+				
+	
 		## Process attachments
 		for attachment in $tempdir/*; do
 
 			# Get the filename without the path
 			filename=$(basename -- "$attachment")
-			
+
+			# build the new filename
+			#NEWNAME=${filename%.*}"$sender""_$NOW."${attachment##*.}
+		
 			# Check if the file is an image
 			file --mime-type $attachment |grep image
 
 			# If is image, rename and copy to $RECEIVED_PHOTOS
-			if [ $? -eq 0 ]
-			then
-				cp $attachment $RECEIVED_PHOTOS/${filename%.*}"$sender""_$now."${attachment##*.};
+			if [ $? -eq 0 ]; then
+
+				# Check if the file already exists
+				if test -f "$RECEIVED_PHOTOS/$sender/$filename"; then
+					echo "$filename already exists in $RECEIVED_PHOTOS/$sender. Skipping."
+				else
+					#If the file doesn't exist, copy it to $RECEIVED_PHOTOS with its new name
+					cp $attachment $RECEIVED_PHOTOS/$sender/$filename;
+
+				fi
 			fi
 
 		done
@@ -62,6 +82,11 @@ else
 		##Delete the email message file
 		echo "Deleting $message"
 		rm $message
+
+		## Delete the mailbox (will take up too much space otherwise)
+		echo "Deleting the downloaded mailbox"
+		rm $mailbox
 		echo "END"
+
 	done
 fi
