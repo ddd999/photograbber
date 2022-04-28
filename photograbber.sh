@@ -1,6 +1,6 @@
 #!/bin/bash
-NEW_MAIL=/home/dave/mail
-RECEIVED_PHOTOS=/home/dave/Desktop/RECEIVED_PHOTOS
+NEW_MAIL=/mnt/photodump/mail
+RECEIVED_PHOTOS=/mnt/photodump/Received_Photos
 mailbox=/var/mail/dave
 
 ## to include the year:  $(date +"%Y-%m-%dT%H%M%S")
@@ -19,21 +19,27 @@ if [ $? -eq 1 ]; then
 	exit 1
 else
 	# Extract the messages from the mbox spool
-	cat /var/mail/dave | formail -ds | cat > $NEW_MAIL/$FILENO_$NOW.msg
+	cat $mailbox | formail -ds sh -c 'cat > "$FILENO.msg"'
+
 
 	EMAILCOUNT=`ls -1 $NEW_MAIL/*.msg 2>/dev/null | wc -l`
 	echo "There are $EMAILCOUNT new messages."
-		
+
 	for message in $NEW_MAIL/*.msg; do
-		echo "Processing $file"
-		tempdir=temp-$NOW
 
 		## Get sender's name and email address, remove weird characters and spaces
 		sender=$(cat $message | formail -x From:| sed 's/[<>]//g' | sed 's/ /_/g')
 
+		echo "Processing $file"
+		tempdir="temp-$sender-$NOW"
+
 		## Create a temporary dir
-		echo "Creating $tempdir"
-		mkdir $tempdir
+		if test -d "$NEW_MAIL/$tempdir"; then
+			echo "$tempdir already exists"
+		else
+			echo "Creating $tempdir"
+			mkdir $tempdir
+		fi
 
 		## Save atttachments in the temp dir
 		ripmime -i $message -d $tempdir
@@ -83,10 +89,10 @@ else
 		echo "Deleting $message"
 		rm $message
 
+	done
+
 		## Delete the mailbox (will take up too much space otherwise)
 		echo "Deleting the downloaded mailbox"
 		rm $mailbox
 		echo "END"
-
-	done
 fi
