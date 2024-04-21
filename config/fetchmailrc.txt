@@ -1,0 +1,8 @@
+defaults
+   proto imap
+poll imap.gmail.com protocol IMAP
+   user "user@gmail.com" is pi here
+   password 'password goes here'
+   mda "/usr/bin/procmail -m /home/pi/.procmailrc"
+   fetchall
+   ssl
