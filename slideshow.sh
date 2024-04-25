@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-DISPLAY=:0.0 feh --quiet \
+DISPLAY=:0.0 feh --no-xinerama \
 		 --hide-pointer \
 		 --reload 30 \
 		 --randomize \
