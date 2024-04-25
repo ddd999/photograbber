@@ -1,0 +1,6 @@
+# Copy to ~/.config/autostart to start whenever the desktop starts
+[Desktop Entry]
+Type=Application
+Name=Slideshow
+Exec=/usr/bin/bash /home/pi/photograbber/slideshow.sh
+

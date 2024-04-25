@@ -1,0 +1,13 @@
+[Unit]
+Description=rclone: Remote FUSE filesystem for cloud storage config %i
+Documentation=man:rclone(1)
+[Service]
+Type=notify
+ExecStartPre=/bin/mkdir -p %h/Desktop/gdrive
+ExecStart= \
+  /usr/bin/rclone mount \
+    --vfs-cache-mode writes \
+    --vfs-cache-max-size 100M \
+    %i: %h/Desktop/gdrive
+[Install]
+WantedBy=default.target

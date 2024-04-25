@@ -36,8 +36,10 @@ else
 	for message in $NEW_MAIL/*.msg; do
 
 		## Get sender's name and email address, remove weird characters and spaces
-		#echo "Get sender's name and email, sanitize filename"
-		sender=$(cat $message | formail -x From:| sed 's/[<>]//g' | sed 's/ /_/g' | sed 's/^_\(.*\)/\1/')
+		# this one for making folders
+		#sender=$(cat $message | formail -x From:| sed 's/[<>]//g' | sed 's/ /_/g' | sed 's/^_\(.*\)/\1/')
+		# this one if not making folders
+		sender=$(cat $message | formail -x From:| sed 's/[<>]//g' | sed 's/ /_/g')
 
 		echo "Sanitized sender name is $sender"
 
@@ -56,13 +58,13 @@ else
 		ripmime -i $message -d $tempdir
 
 		#Check if there's already a folder for this sender
-		if test -d "$RECEIVED_PHOTOS/$sender"; then
-			echo "$RECEIVED_PHOTOS/$sender exists"
-		else
-			# If not, make one
-			echo "Making $RECEIVED_PHOTOS/$sender"
-			mkdir $RECEIVED_PHOTOS/$sender
-		fi
+		#if test -d "$RECEIVED_PHOTOS/$sender"; then
+		#	echo "$RECEIVED_PHOTOS/$sender exists"
+		#else
+		#	# If not, make one
+		#	echo "Making $RECEIVED_PHOTOS/$sender"
+		#	mkdir $RECEIVED_PHOTOS/$sender
+		#fi
 
 
 		## Process attachments
@@ -72,7 +74,10 @@ else
 			filename=$(basename -- "$attachment")
 
 			# build the new filename
-			NEWNAME=${filename%.*}"$sender""_$NOW."${attachment##*.}
+			# add timestamp on end
+			#NEWNAME=${filename%.*}"$sender""_$NOW."${attachment##*.}
+			# don't add timestamp
+			NEWNAME=${filename%.*}"$sender""."${attachment##*.}
 
 			# Check if the file is an image
 			file --mime-type $attachment |grep image
@@ -81,15 +86,15 @@ else
 			if [ $? -eq 0 ]; then
 
 				# Check if the file already exists
-				if test -f "$RECEIVED_PHOTOS/$sender/$NEWNAME"; then
-					echo "$NEWNAME already exists in $RECEIVED_PHOTOS/$sender. Skipping."
+				if test -f "$RECEIVED_PHOTOS$NEWNAME"; then
+					echo "$NEWNAME already exists in $RECEIVED_PHOTOS. Skipping."
 				else
 
 					# Fix image rotation
 					exifautotran $attachment
 
 					#If the file doesn't exist, copy it to $RECEIVED_PHOTOS with its new name
-					cp $attachment $RECEIVED_PHOTOS/$sender/$NEWNAME
+					cp $attachment $RECEIVED_PHOTOS/$NEWNAME
 
 				fi
 			fi
