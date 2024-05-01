@@ -75,9 +75,9 @@ else
 
 			# build the new filename
 			# add timestamp on end
-			#NEWNAME=${filename%.*}"$sender""_$NOW."${attachment##*.}
+			NEWNAME=${filename%.*}"$sender""_$NOW."${attachment##*.}
 			# don't add timestamp
-			NEWNAME=${filename%.*}"$sender""."${attachment##*.}
+			#NEWNAME=${filename%.*}"$sender""."${attachment##*.}
 
 			# Check if the file is an image
 			file --mime-type $attachment |grep image
